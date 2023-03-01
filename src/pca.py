@@ -17,7 +17,7 @@ housing_df_numeric = housing_df.iloc[:, 0:housing_df.shape[1] - 1]
 # print(housing_df_numeric.head())
 
 # m = entries, n = attributes
-m, n = housing_df_numeric.shape
+N, M = housing_df_numeric.shape
 
 # normalize data
 df_normalized=(housing_df_numeric - housing_df_numeric.mean()) / housing_df_numeric.std()
@@ -29,8 +29,8 @@ df_normalized=(housing_df_numeric - housing_df_numeric.mean()) / housing_df_nume
 # PCA via SVD
 U,S,V = np.linalg.svd(df_normalized, full_matrices=True)
 
-print(U)
-print(S)
+#print(U)
+#print(S)
 print(V)
 
 rho = (S*S) / (S*S).sum() 
@@ -59,6 +59,12 @@ plt.legend(['Individual','Cumulative','Threshold'])
 plt.grid()
 plt.savefig('../Data/PCA_variance_explained.png',dpi=100)
 plt.show()
+
+X_orig = housing_df_numeric.values
+X = df_normalized.values
+attributeNames=["Longitude", "Latitude", "Med Age", "Total Rooms", "Total Bedrooms", "Population", "Households", "Median Income", "Medican House Value"]
+
+
 
 #############
 # Simpler PCA
