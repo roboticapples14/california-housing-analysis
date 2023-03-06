@@ -11,7 +11,7 @@ N,M = X.shape
 
 # We saw in 2.1.3 that the first 3 components explaiend more than 90
 # percent of the variance. Let's look at their coefficients:
-pcs = [0,1,2]
+pcs = [0,1,2,3]
 
 legendStrs = ['PC'+str(e+1) for e in pcs]
 c = ['r','g','b']
