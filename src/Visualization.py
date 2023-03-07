@@ -20,6 +20,10 @@ r = np.arange(1,M+1)
 Vh = V.T
 for i in pcs:    
     plt.bar(r+i*bw, Vh[:,i], width=bw)
+
+print("X: ", X)
+print(r)
+print(bw)
 plt.xticks(r+bw, attributeNames)
 plt.xlabel('Attributes')
 plt.ylabel('Component coefficients')
