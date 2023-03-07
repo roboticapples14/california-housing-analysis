@@ -46,4 +46,13 @@ plt.title('Normalized PCA Plot')
 plt.show()
 
 
+i = 2
+j = 3
+plt.scatter(Z[:,i], Z[:,j])
+plt.xlabel('PC3')
+plt.ylabel('PC4')
+plt.title('Normalized PCA Plot')
+plt.show()
+
+
 
