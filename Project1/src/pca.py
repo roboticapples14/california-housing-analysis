@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
 import os
+
 DATA_PATH = '/Users/nvalett/Documents/Natalie/DTU/ML/California_Housing_DB/Data'
 housing_df_raw = pd.read_csv(os.path.join(DATA_PATH, 'housing.csv'))
 
