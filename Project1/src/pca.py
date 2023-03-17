@@ -13,9 +13,9 @@ print(len(housing_df))
 
 
 
-housing_df_numeric = housing_df.iloc[:, 2:housing_df.shape[1] - 1]
+housing_df_numeric = housing_df.iloc[:, :housing_df.shape[1] - 1]
 # print(housing_df_numeric.shape)
-# print(housing_df_numeric.head())
+print(housing_df_numeric.head())
 
 # m = entries, n = attributes
 N, M = housing_df_numeric.shape
@@ -30,20 +30,20 @@ U,S,V = np.linalg.svd(df_normalized, full_matrices=True)
 
 #print(U)
 #print(S)
-print(V)
+# print(V)
 
 rho = (S*S) / (S*S).sum() 
 
 # rho = variablility explained
 variance = {attr: var for attr, var in zip(df_normalized.columns, rho)}
-print(variance)
+# print(variance)
  
 sns.barplot(x=list(range(1,len(rho)+1)),
             y=rho, color="limegreen")
 plt.xlabel('SVs', fontsize=16)
 plt.ylabel('Percent Variance Explained', fontsize=16)
 plt.savefig(os.path.join(DATA_PATH, 'svd_scree_plot.png'),dpi=100)
-plt.show()
+# plt.show()
 
 # # Compute variance explained by principal components
 
@@ -60,9 +60,9 @@ plt.ylabel('Variance explained');
 plt.legend(['Individual','Cumulative','Threshold'])
 plt.grid()
 plt.savefig(os.path.join(DATA_PATH, 'PCA_variance_explained.png'),dpi=100)
-plt.show()
+# plt.show()
 
 X_orig = housing_df_numeric.values
 X = df_normalized.values
-attributeNames=["Longitude", "Latitude", "Med Age", "Total Rooms", "Total Bedrooms", "Population", "Households", "Median Income", "Medican House Value"]
+attributeNames=["Longitude", "Latitude", "Med Age", "Total Rooms", "Total Bedrooms", "Population", "Households", "Median Income", "Median House Value"]
 

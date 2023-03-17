@@ -53,6 +53,3 @@ plt.xlabel('PC3')
 plt.ylabel('PC4')
 plt.title('Normalized PCA Plot')
 plt.show()
-
-
-
