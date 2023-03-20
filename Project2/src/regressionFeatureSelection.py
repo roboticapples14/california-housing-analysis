@@ -167,5 +167,16 @@ else:
     
     
 show()
+
+y_est= m.predict(X[:,ff])
+figure()
+subplot(2,1,1)
+plot(y, y_est, '.')
+xlabel('Median Income (true)'); ylabel('Median Income (estimated)');
+subplot(2,1,2)
+hist(residual,40)
+
+
+
 print(attributeNames)
 print('Ran Exercise 6.2.1')
