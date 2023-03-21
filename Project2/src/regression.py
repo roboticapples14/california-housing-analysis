@@ -1,51 +1,56 @@
-<<<<<<< HEAD
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
-import os
-import sklearn.linear_model as lm
-from matplotlib.pylab import figure, subplot, plot, xlabel, ylabel, hist, show
+from prepData import Data
+from Models import linearRegression, baseline
 
-DATA_PATH = '../../data'
-housing_df_raw = pd.read_csv(os.path.join(DATA_PATH, 'housing.csv'))
-housing_df = housing_df_raw.dropna()
+DATA_PATH = '../../data/housing.csv'
+data = Data(DATA_PATH)
+data.remove_col(9)
 
-housing_df_numeric = housing_df.iloc[:, :housing_df.shape[1] - 1]
+X_train,X_test,y_train,y_test = data.get_train_test('median_income')
 
-# n = attributes, m = entries
-N, M = housing_df_numeric.shape
+lr = linearRegression()
+baseline = baseline()
 
-# normalize data
-df_normalized=(housing_df_numeric - housing_df_numeric.mean()) / housing_df_numeric.std()
-X = housing_df_numeric.values
+models = [lr, baseline]
 
-# Split dataset into features and target vector
-med_inc_index = 7
-y = X[:,med_inc_index]
+for model in models:
+    # train
+    model.fit(X_train,y_train)
+    # test
+    y_est = model.predict(X_test)
 
-X_cols = list(range(0,med_inc_index)) + list(range(med_inc_index+1,M))
-X = X[:,X_cols]
+    # results
+    # coefs= model.get_coefs()
+    print("y_est: ", y_est)
+    residual = model.get_residual(y_est, y_test)
+    print('\nThe error in the training data is : {}'.format(model.mse(y_test,y_est)))
 
-# Fit ordinary least squares regression model
-model = lm.LinearRegression()
-model.fit(X,y)
 
-# Predict alcohol content
-y_est = model.predict(X)
-residual = y_est-y
+# # Display scatter plot
+# figure()
+# subplot(2,1,1)
+# plot(y_test, y_est, '.')
+# xlabel('Median Income (true)'); ylabel('Median Income (estimated)');
+# subplot(2,1,2)
+# hist(residual,40)
+# show()
 
-# Display scatter plot
-figure()
-subplot(2,1,1)
-plot(y, y_est, '.')
-xlabel('Median Income (true)'); ylabel('Median Income (estimated)');
-subplot(2,1,2)
-hist(residual,40)
 
-show()
+# print('\nThe error in the training data is : {}'.format(lr.mse(y_test,y_est)))
+#The error w/o any manipulation is 1.226, witbh j rooms, bedrooms, 
+#and ppl per house it is .9276, and if we add the same measures per person, 
+#it goes down to .8987
+#Oow wow added ones line and it dropped again
 
-=======
-import pandas as pdimport numpy as npimport matplotlib.pyplot as pltimport seaborn as snsfrom sklearn.decomposition import PCAimport osimport sklearn.linear_model as lmfrom matplotlib.pylab import figure, subplot, plot, xlabel, ylabel, hist, showDATA_PATH = '../../data'housing_df_raw = pd.read_csv(os.path.join(DATA_PATH, 'housing.csv'))housing_df = housing_df_raw.dropna()housing_df_numeric = housing_df.iloc[:, :housing_df.shape[1] - 1]# m = entries, n = attributesN, M = housing_df_numeric.shape# normalize data#df_normalized=(housing_df_numeric - housing_df_numeric.mean()) / housing_df_numeric.std()X = housing_df_numeric.values# Split dataset into features and target vectormed_inc_index = 7y = X[:,med_inc_index]X_cols = list(range(0,med_inc_index)) + list(range(med_inc_index+1,M))X = X[:,X_cols]#adds rooms per bedrooms room_idx =3bedroom_idx = 4X_room_per_bedroom = (X[:,room_idx]/X[:,bedroom_idx]).reshape(-1,1)X = np.asarray(np.bmat('X, X_room_per_bedroom'))#adds a ones matrix to Xones_matrix = np.ones((N,1))X = np.asarray(np.bmat('ones_matrix, X'))# Fit ordinary least squares regression modelmodel = lm.LinearRegression()model.fit(X,y)# Predict alcohol contenty_est = model.predict(X)coefs= model.coef_residual = y_est-y# Display scatter plotfigure()subplot(2,1,1)plot(y, y_est, '.')xlabel('Median Income (true)'); ylabel('Median Income (estimated)');subplot(2,1,2)hist(residual,40)show()def mse(y_true, y_est):    summation = 0    n = len(y_true)    for i in range (0,n):  #looping through each element of the list        difference = y_true[i] - y_est[i]  #finding the difference between observed and predicted value        squared_difference = difference**2  #taking square of the differene         summation = summation + squared_difference  #taking a sum of all the differences    MSE = summation/n    return(MSE)    print('\nThe error in the training data is : {0:.4f}'.format(mse(y,y_est)))#The error w/o any manipulation is 1.226, witbh j rooms, bedrooms, #and ppl per house it is .9276, and if we add the same measures per person, #it goes down to .8987#Oow wow added ones line and it dropped again                    
->>>>>>> 56bb3dd7c28f33513f0ea9efb7d949a0937e3c20
+
+# #adds rooms per bedrooms 
+# room_idx =3
+# bedroom_idx = 4
+
+# X_room_per_bedroom = (X[:,room_idx]/X[:,bedroom_idx]).reshape(-1,1)
+
+# X = np.asarray(np.bmat('X, X_room_per_bedroom'))
