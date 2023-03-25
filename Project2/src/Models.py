@@ -75,22 +75,28 @@ class ANN(Model):
     '''
     def __init__(self, M=8, n_hidden_units=1):
         '''
+        :param M: number of inputs (features in X)
         :param n_hidden_units: number of hidden nodes
         '''
-        n_hidden_units = 1 # number of hidden units in the signle hidden layer
-        # The lambda-syntax defines an anonymous function, which is used here to 
-        # make it easy to make new networks within each cross validation fold
+        # model = lambda: torch.nn.Sequential(
+        #                     torch.nn.Linear(M, n_hidden_units), # M input features to H hiden units (nodes)
+        #                     # 1st transfer function, either Tanh or ReLU:
+        #                     torch.nn.ReLU(), #torch.nn.Tanh(),
+        #                     torch.nn.Linear(n_hidden_units, 1), # H hidden units to 1 output neuron
+        #                     torch.nn.Sigmoid() # final tranfer function
+        #                     )
+
+        # Define the model
         model = lambda: torch.nn.Sequential(
-                            torch.nn.Linear(M, n_hidden_units), # M input features to H hiden units (nodes)
-                            # 1st transfer function, either Tanh or ReLU:
-                            torch.nn.Tanh(),                            #torch.nn.ReLU(),
-                            torch.nn.Linear(n_hidden_units, 1), # H hidden units to 1 output neuron
-                            torch.nn.Sigmoid() # final tranfer function
-                            )
+                    torch.nn.Linear(M, n_hidden_units), #M features to n_hidden_units
+                    torch.nn.ReLU(),   #Tanh(),   # 1st transfer function,
+                    torch.nn.Linear(n_hidden_units, 1), # n_hidden_units to 1 output neuron
+                    # no final tranfer function, i.e. "linear output"
+                    )
         super().__init__(model)
         self.net = None
         
-    def fit(self, X_train, y_train, loss_fn=torch.nn.BCELoss(), n_replicates=3, max_iter=10000):
+    def fit(self, X_train, y_train, loss_fn=torch.nn.MSELoss(), n_replicates=3, max_iter=10000):
         '''
         train neural net
         :param X: X train
@@ -118,8 +124,8 @@ class ANN(Model):
     def predict(self, X_test):
         if not isinstance(X_test, torch.Tensor):
             X_test = torch.Tensor(np.asarray(X_test))
-        y_sigmoid = self.net(X_test) # activation of final note, i.e. prediction of network
-        y_est = (y_sigmoid > .5).type(dtype=torch.uint8) # threshold output of sigmoidal function
+        y_est = self.net(X_test) # activation of final note, i.e. prediction of network
+        # y_est = (y_sigmoid > .5).type(dtype=torch.uint8) # threshold output of sigmoidal function
         return y_est
 
     def get_residual(self, y_est, y_test):
@@ -132,9 +138,10 @@ class ANN(Model):
             y_est = torch.Tensor(np.asarray(y_est))
         if not isinstance(y_test, torch.Tensor):
             y_test = torch.Tensor(np.asarray(y_test))
-        e = (y_est != y_test)
-        error_rate = (sum(e).type(torch.float)/len(y_test)).data.numpy()
-        return error_rate
+        y_est = y_est.squeeze(1)
+        criterion = torch.nn.MSELoss()
+        mse = criterion(y_est, y_test)
+        return mse.detach().numpy()
 
 
 def train_neural_net(model, loss_fn, X, y,
@@ -237,6 +244,8 @@ def train_neural_net(model, loss_fn, X, y,
         old_loss = 1e6
         for i in range(max_iter):
             y_est = net(X) # forward pass, predict labels on training set
+            if (y_est.shape != y.shape):
+                y_est = y_est.squeeze(1)
             loss = loss_fn(y_est, y) # determine loss
             loss_value = loss.data.numpy() #get numpy array instead of tensor
             learning_curve.append(loss_value) # record loss for later display
