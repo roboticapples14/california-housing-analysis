@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+
 class Data:
     def __init__(self, data):
         '''
@@ -11,7 +12,44 @@ class Data:
         # m = entries, n = attributes
         N, M = self.df.shape
         self.size = (N, M)
+        
+    def one_out_of_k(self, col_name):
+        '''
+        Transforms the catagorical data in col_nane to a one-out-of-k 
+        feature transformation. The matrix created is added to the end(right)
+        of the current array, and the column supplied is deleted
+        :param col_name: column with catagorical data
+        '''
+        new = self.df[[col_name]].copy()
+        encoded = pd.get_dummies(new, prefix=col_name)
+        self.df = pd.concat([self.df, encoded], axis=1)
+        colNames = self.df.columns.values.tolist()
+        index=colNames.index(col_name)
+        self.remove_col(index)
+        self.size = self.df.shape
+        
+    def standardize(self):
+        '''
+        Standardizes entire dataset with mean 0 and std 1. This seems wrong 
+        because in theory, you should only do this to the test data set,
+        but then again, this is what the assignment says to do.    
+        
+        Returns: tuple(sigma (the array of the different attributes' std) and 
+                              mu (the array of the different attributes' 
+                              averages))
+        '''
+        columns = list(self.df)
+        sigma= [0]*len(columns)
+        mu = [0]*len(columns)
+        k=0
+        for i in columns:
+            mu[k]=  self.df[i].mean()
+            sigma[k] = self.df[i].std()
+            self.df[i] =( self.df[i] - mu[k] ) / sigma[k]
+            k+=1
+        return(sigma,mu)
 
+    
     def getAttributeNames(self):
         return list(self.df.columns)        
 
@@ -48,6 +86,10 @@ class Data:
         return (X_train,X_test,np.asarray(y_train),np.asarray(y_test))
 
     def get_X_y(self, col_name):
+        '''
+        param col_name: the column being assigned as y
+        returns: tuple (X(2d array),y(1d array))
+        '''
         y = np.asarray(self.df.pop(col_name))
         X = np.asarray(self.df)
         return (X, y)
