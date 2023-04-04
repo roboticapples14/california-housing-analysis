@@ -49,7 +49,27 @@ class Data:
             k+=1
         return(sigma,mu)
 
-    
+    def add_divide_col(self, numCol, denCol):
+        '''
+        Adds another column with values numCol/denCol. It is the method users'
+        responsibility to ensure that the denCol does not contain 0's
+        :param numCol: name of numerator column
+        :param denCol: name of denominator column
+        :return: none
+        '''
+        self.df[''+numCol+ ' / '+ denCol] = self.df[numCol] / self.df[denCol]
+        self.size = self.df.shape
+        
+    def add_multiply_col(self, col1, col2):
+        '''
+        Adds another column with values col1*col2. I
+        :param numCol: name of first column
+        :param denCol: name of second column
+        :return: none
+        '''
+        self.df[''+col1+ ' * '+ col2] = self.df[col1] / self.df[col2]
+        self.size = self.df.shape
+        
     def getAttributeNames(self):
         return list(self.df.columns)        
 

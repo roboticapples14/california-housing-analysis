@@ -17,8 +17,18 @@ DATA_PATH = '../../data/housing.csv'
 data=Data(DATA_PATH)
 #One out of k transformation
 data.one_out_of_k('ocean_proximity')
+#Add rooms per house and bedrooms per house  and population per household attributes
+data.add_divide_col('total_rooms','households')
+data.add_divide_col('total_bedrooms','households')
+data.add_divide_col('population','households')
 
-lambdas = np.power(10.,range(-6,4))
+#Add households per person, total rooms per person, and total bedrooms per person
+data.add_divide_col('total_rooms','population')
+data.add_divide_col('total_bedrooms','population')
+data.add_divide_col('households','population')
+
+
+lambdas = np.power(10.,range(-5,9))
 # Create crossvalidation partition for evaluation
 K = 10
 CV = model_selection.KFold(K, shuffle=True)
@@ -86,12 +96,12 @@ for train_index, test_index in CV.split(X,y):
 
     # Display the results for the last cross-validation fold
     
-    
-    #Removed for ease of use for other parts of the project
     '''
+    #Removed for ease of use for other parts of the project
+    
     if 1==1:
     #if k == K-1:
-        figure(k, figsize=(12,8))
+        figure(k, figsize=(18,12))
         subplot(1,2,1)
         semilogx(lambdas,mean_w_vs_lambda.T[:,1:],'.-') # Don't plot the bias term
         xlabel('Regularization factor')
@@ -99,7 +109,7 @@ for train_index, test_index in CV.split(X,y):
         grid()
         # You can choose to display the legend, but it's omitted for a cleaner 
         # plot, since there are many attributes
-        legend(attributeNames[1:], loc='best')
+        #legend(attributeNames[1:], loc='best')
         
         subplot(1,2,2)
         title('Optimal lambda: 1e{0}'.format(np.log10(opt_lambda)))
@@ -135,4 +145,5 @@ print('- R^2 test:     {0}\n'.format((Error_test_nofeatures.sum()-Error_test_rlr
 print('Weights in last fold:')
 for m in range(M):
     print('{:>15} {:>15}'.format(attributeNames[m], np.round(w_rlr[m,-1],2)))
+
 '''
