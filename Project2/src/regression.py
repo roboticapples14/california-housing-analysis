@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 from prepData import Data
 from Models import linearRegression, baseline
 
-DATA_PATH = '../../data/housing.csv'
+DATA_PATH = 'California_Housing_DB/Data/housing.csv'
 data = Data(DATA_PATH)
 data.remove_col(9)
 
@@ -17,17 +17,23 @@ baseline = baseline()
 
 models = [lr, baseline]
 
-for model in models:
-    # train
-    model.fit(X_train,y_train)
-    # test
-    y_est = model.predict(X_test)
+X_train_ones = lr.add_ones_col(X_train)
+theta = lr.trainLinearReg(X_train_ones, y_train, 0)
+print(theta)
 
-    # results
-    # coefs= model.get_coefs()
-    print("y_est: ", y_est)
-    residual = model.get_residual(y_est, y_test)
-    print('\nThe error in the training data is : {}'.format(model.mse(y_test,y_est)))
+# # train
+# lr.fit(X_train,y_train)
+# # test
+# y_est = lr.predict(X_test)
+
+# # results
+# # coefs= model.get_coefs()
+# print("y_est: ", y_est)
+# residual = lr.get_residual(y_est, y_test)
+# print('\nThe error in the training data is : {}'.format(lr.mse(y_test,y_est)))
+
+
+
 
 
 # # Display scatter plot
