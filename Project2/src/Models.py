@@ -3,7 +3,9 @@ import numpy as np
 from sklearn.decomposition import PCA
 import torch
 import sklearn.linear_model as lm
+from sklearn import model_selection
 from sklearn.dummy import DummyRegressor
+from scipy.optimize import minimize
 
 class Model(object):
     def __init__(self, model):
@@ -50,6 +52,10 @@ class Model(object):
             summation = summation + squared_difference  #taking a sum of all the differences
         MSE = summation/n
         return(MSE)
+    
+    def add_ones_col(self, X):
+        # Insert the 1's column.
+        return np.insert(X, 0, 1, axis=1)
 
 class linearRegression(Model):
     '''
@@ -60,6 +66,82 @@ class linearRegression(Model):
         # if it's True, we don't need this
         model = lm.LinearRegression(fit_intercept=fit_intercept)
         super().__init__(model)
+
+    # Create a function to compute cost and gradient.
+    def linearRegCostFunction(self, X, y, theta, lambda_coef):
+        """
+        Computes cost and gradient for regularized
+        linear regression with multiple variables.
+        Args:
+            X: array (m, number of features+1)
+            y: array (m, 1)
+            theta: array (number of features+1, 1)
+            lambda_coef: float
+        Returns:
+            J: float
+            grad: vector array
+        """
+        # Get the number of training examples, m.
+        m = len(X)
+        
+        # Ensure theta shape(number of features+1, 1).
+        theta = theta.reshape(-1, y.shape[1])
+        
+        #############################################################
+        ###################### Cost Computation #####################
+        #############################################################
+        # Compute the cost.
+        unreg_term = (1 / (2 * m)) * np.sum(np.square(np.dot(X, theta) - y))
+        
+        # Note that we should not regularize the theta_0 term!
+        reg_term = (lambda_coef / (2 * m)) * np.sum(np.square(theta[1:len(theta)]))
+        
+        cost = unreg_term + reg_term
+        
+        #############################################################
+        #################### Gradient Computation ###################
+        #############################################################
+        # Initialize grad.
+        grad = np.zeros(theta.shape)
+
+        # Compute gradient for j >= 1.
+        grad = (1 / m) * np.dot(X.T, np.dot(X, theta) - y) + (lambda_coef / m ) * theta
+        
+        # Compute gradient for j = 0,
+        # and replace the gradient of theta_0 in grad.
+        unreg_grad = (1 / m) * np.dot(X.T, np.dot(X, theta) - y)
+        grad[0] = unreg_grad[0]
+
+        return (cost, grad.flatten())
+
+    def trainLinearReg(self, X, y, lambda_coef):
+        """
+        Trains linear regression using the dataset (X, y)
+        and regularization parameter lambda_coef.
+        Returns the trained parameters theta.
+        Args:
+            X: array (m, number of features+1)
+            y: array (m, 1)
+            lambda_coef: float
+        Returns:
+            theta: array (number of features+1, )
+        """
+        # Initialize Theta.
+        initial_theta = np.zeros((X.shape[1], 1))
+        
+        # Create "short hand" for the cost function to be minimized.
+        def costFunction(theta):
+            return self.linearRegCostFunction(X, y, theta, lambda_coef)
+        
+        # Now, costFunction is a function that takes in only one argument.
+        results = minimize(fun=costFunction,
+                        x0=initial_theta,
+                        method='CG',
+                        jac=True,
+                        options={'maxiter':200})
+        theta = results.x
+
+        return theta
 
 class baseline(Model):
     '''
@@ -89,7 +171,7 @@ class ANN(Model):
         # Define the model
         model = lambda: torch.nn.Sequential(
                     torch.nn.Linear(M, n_hidden_units), #M features to n_hidden_units
-                    torch.nn.ReLU(),   #Tanh(),   # 1st transfer function,
+                    torch.nn.Tanh(),   #ReLU(),   # 1st transfer function,
                     torch.nn.Linear(n_hidden_units, 1), # n_hidden_units to 1 output neuron
                     # no final tranfer function, i.e. "linear output"
                     )
@@ -125,7 +207,6 @@ class ANN(Model):
         if not isinstance(X_test, torch.Tensor):
             X_test = torch.Tensor(np.asarray(X_test))
         y_est = self.net(X_test) # activation of final note, i.e. prediction of network
-        # y_est = (y_sigmoid > .5).type(dtype=torch.uint8) # threshold output of sigmoidal function
         return y_est
 
     def get_residual(self, y_est, y_test):
@@ -142,7 +223,6 @@ class ANN(Model):
         criterion = torch.nn.MSELoss()
         mse = criterion(y_est, y_test)
         return mse.detach().numpy()
-
 
 def train_neural_net(model, loss_fn, X, y,
                      n_replicates=3, max_iter = 10000, tolerance=1e-6):
@@ -276,3 +356,69 @@ def train_neural_net(model, loss_fn, X, y,
         
     # Return the best curve along with its final loss and learing curve
     return best_net, best_final_loss, best_learning_curve
+
+def rlr_validate(X,y,lambdas,cvf=10):
+    ''' Validate regularized linear regression model using 'cvf'-fold cross validation.
+        Find the optimal lambda (minimizing validation error) from 'lambdas' list.
+        The loss function computed as mean squared error on validation set (MSE).
+        Function returns: MSE averaged over 'cvf' folds, optimal value of lambda,
+        average weight values for all lambdas, MSE train&validation errors for all lambdas.
+        The cross validation splits are standardized based on the mean and standard
+        deviation of the training set when estimating the regularization strength.
+        
+        Parameters:
+        X       training data set
+        y       vector of values
+        lambdas vector of lambda values to be validated
+        cvf     number of crossvalidation folds     
+        
+        Returns:
+        opt_val_err         validation error for optimum lambda
+        opt_lambda          value of optimal lambda
+        mean_w_vs_lambda    weights as function of lambda (matrix)
+        train_err_vs_lambda train error as function of lambda (vector)
+        test_err_vs_lambda  test error as function of lambda (vector)
+    '''
+    CV = model_selection.KFold(cvf, shuffle=True)
+    M = X.shape[1]
+    w = np.empty((M,cvf,len(lambdas)))
+    train_error = np.empty((cvf,len(lambdas)))
+    test_error = np.empty((cvf,len(lambdas)))
+    f = 0
+    y = y.squeeze()
+    for train_index, test_index in CV.split(X,y):
+        X_train = X[train_index]
+        y_train = y[train_index]
+        X_test = X[test_index]
+        y_test = y[test_index]
+        
+        # Standardize the training and set set based on training set moments
+        mu = np.mean(X_train[:, 1:], 0)
+        sigma = np.std(X_train[:, 1:], 0)
+        
+        X_train[:, 1:] = (X_train[:, 1:] - mu) / sigma
+        X_test[:, 1:] = (X_test[:, 1:] - mu) / sigma
+        
+        # precompute terms
+        Xty = X_train.T @ y_train
+        XtX = X_train.T @ X_train
+        for l in range(0,len(lambdas)):
+            # Compute parameters for current value of lambda and current CV fold
+            # note: "linalg.lstsq(a,b)" is substitue for Matlab's left division operator "\"
+            lambdaI = lambdas[l] * np.eye(M)
+            lambdaI[0,0] = 0 # remove bias regularization
+            w[:,f,l] = np.linalg.solve(XtX+lambdaI,Xty).squeeze()
+            # Evaluate training and test performance
+            train_error[f,l] = np.power(y_train-X_train @ w[:,f,l].T,2).mean(axis=0)
+            test_error[f,l] = np.power(y_test-X_test @ w[:,f,l].T,2).mean(axis=0)
+    
+        f=f+1
+
+    opt_val_err = np.min(np.mean(test_error,axis=0))
+    opt_lambda = lambdas[np.argmin(np.mean(test_error,axis=0))]
+    train_err_vs_lambda = np.mean(train_error,axis=0)
+    test_err_vs_lambda = np.mean(test_error,axis=0)
+    mean_w_vs_lambda = np.squeeze(np.mean(w,axis=1))
+    
+    return opt_val_err, opt_lambda, mean_w_vs_lambda, train_err_vs_lambda, test_err_vs_lambda
+     
