@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
 import torch
+import matplotlib.pyplot as plt
 import sklearn.linear_model as lm
 from sklearn import model_selection
 from sklearn.dummy import DummyRegressor
@@ -422,3 +423,11 @@ def rlr_validate(X,y,lambdas,cvf=10):
     
     return opt_val_err, opt_lambda, mean_w_vs_lambda, train_err_vs_lambda, test_err_vs_lambda
      
+
+# set mpl params
+def setup_mpl():
+    plt.rcParams['font.family'] = "Helvetica Neue"
+    plt.rcParams['font.size'] = 11
+    plt.rcParams['figure.figsize'] = [6.4, 4.8]
+    plt.rcParams['figure.dpi'] = 200
+    plt.rcParams['lines.linewidth'] = 1

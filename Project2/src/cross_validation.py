@@ -1,3 +1,5 @@
+from cmath import nan
+import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,9 +9,11 @@ from matplotlib.pylab import (figure, semilogx, loglog, xlabel, ylabel, legend,
                            title, subplot, show, grid)
 import torch
 import torch.nn as nn
+import scipy.stats as stats
+from scipy.stats import t
 from sklearn.decomposition import PCA
 from prepData import Data
-from Models import linearRegression, baseline, rlr_validate
+from Models import linearRegression, baseline, rlr_validate, setup_mpl
 from scipy.io import loadmat
 from Models import ANN
 
@@ -159,8 +163,103 @@ df.sort_values('folds')
 df.to_csv('cv_results.csv')
 print(df)
 
-# df = pd.read_csv('cv_results.csv')
-# df2=df.drop(df.columns[0], axis=1).round(decimals=4)
-# df2.sort_values('folds')
-# df2.to_csv('cv_results_new.csv')
-# print(df2)
+
+'''
+Analysis of results below
+    Average errors, p-values, confidence intervals...
+'''
+
+# df = pd.read_csv('cv_results_new.csv')
+# ann_e = df["ann_E"].tolist()
+# rlr_e = df["rlr_E"].tolist()
+# b_e = df["b_E"].tolist()
+# b_e = [e for e in b_e if not math.isnan(e)]
+
+
+# ann_e_ref = np.asarray(ann_e).reshape((10,5))
+# rlr_e_ref = np.asarray(rlr_e).reshape((10,5))
+
+# # average error of each parameter
+# ann_total1 = 0
+# ann_total2 = 0
+# ann_total3 = 0
+# ann_total4 = 0
+# ann_total5 = 0
+# rlr_total1 = 0
+# rlr_total2 = 0
+# rlr_total3 = 0
+# rlr_total4 = 0
+# rlr_total5 = 0
+# for i in range(len(ann_e_ref)):
+#     ann_total1 += ann_e_ref[i][0]
+#     ann_total2 += ann_e_ref[i][1]
+#     ann_total3 += ann_e_ref[i][2]
+#     ann_total4 += ann_e_ref[i][3]
+#     ann_total5 += ann_e_ref[i][4]
+#     rlr_total1 += rlr_e_ref[i][0]
+#     rlr_total2 += rlr_e_ref[i][1]
+#     rlr_total3 += rlr_e_ref[i][2]
+#     rlr_total4 += rlr_e_ref[i][3]
+#     rlr_total5 += rlr_e_ref[i][4]
+
+# ann_e_1 = ann_total1/10
+# ann_e_2 = ann_total2/10
+# ann_e_3 = ann_total3/10
+# ann_e_4 = ann_total4/10
+# ann_e_5 = ann_total5/10
+# rlr_e_1 = rlr_total1/10
+# rlr_e_2 = rlr_total2/10
+# rlr_e_3 = rlr_total3/10
+# rlr_e_4 = rlr_total4/10
+# rlr_e_5 = rlr_total5/10
+
+# # average error in every fold
+# ann_e_avg = []
+# rlr_e_avg = []
+
+# ann_total = 0
+# rlr_total = 0
+# for i in range(len(ann_e)):
+#     ann_total += ann_e[i]
+#     rlr_total += rlr_e[i]
+#     if ((i + 1) % 5 == 0):
+#         ann_e_avg.append(ann_total/5)
+#         rlr_e_avg.append(rlr_total/5)
+#         ann_total = 0
+#         rlr_total = 0
+
+# print(ann_e_avg)
+# print(rlr_e_avg)
+
+
+# setup_mpl()
+
+# line1, = plt.plot(ann_e_avg, 'o', label='ANN')
+# line2, = plt.plot(rlr_e_avg, 'o', label='RLR')
+# line3, = plt.plot(b_e, 'o', label='Baseline')
+# plt.legend(handles=[line1, line2, line3])
+# plt.xlabel('Fold')
+# plt.ylabel('Error')
+# plt.show()
+
+# # Performing the paired sample t-test
+# p_val_a_r = stats.ttest_rel(ann_e_avg, rlr_e_avg)
+# p_val_a_b = stats.ttest_rel(ann_e_avg, b_e)
+# p_val_r_b = stats.ttest_rel(rlr_e_avg, b_e)
+# print(p_val_a_r)
+# print(p_val_a_b)
+# print(p_val_r_b)
+
+
+# # confidence intervals
+# for x in [b_e, ann_e, rlr_e]:
+#     x = np.asarray(x)
+#     m = x.mean() 
+#     s = x.std() 
+#     dof = len(x)-1 
+#     confidence = 0.95
+#     t_crit = np.abs(t.ppf((1-confidence)/2,dof))
+#     (m-s*t_crit/np.sqrt(len(x)), m+s*t_crit/np.sqrt(len(x))) 
+
+#     values = [np.random.choice(x,size=len(x),replace=True).mean() for i in range(1000)] 
+#     print(np.percentile(values,[100*(1-confidence)/2,100*(1-(1-confidence)/2)]))
